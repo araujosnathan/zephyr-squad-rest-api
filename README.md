@@ -23,8 +23,17 @@ Check the `zephyr_config.json` to put the config values that you need to your pr
 You can use the `environment variables` to put your credentials, if these values were not in config file, it will get from environment variables.<br>
 If you put the credentials in config file, it will use them even you have set any environment variable
 
-# To run
+# Command to populate cycle and folders with tests
 
 ```
-python zephyr.py
+python zephyr_squad.py --command populate --config_file zephyr_config.json
+```
+
+# Command to publish test result to automated folder
+
+Note: For the moment, we are filtering by @ER-XXXX key regex in Mochawesome file to find the tests to update.<br>
+If your key is different in Jira, try to change the line 299 and 301 in `zephyr_api.py`
+
+```
+python3 zephyr_squad.py --command publish --config_file zephyr_config.json --test_result_file mochawesome_report.json
 ```
