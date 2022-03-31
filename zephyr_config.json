@@ -6,7 +6,7 @@
     "project_id":11111,
     "version_id": 11111,
     "cycle_name": "Regression",
-    "filters":[
+    "folders":[
         {
             "name": "Automation",
             "query": "project = \"My Project\" AND issuetype = Test AND Platform = Web AND status = \"Ready to Execute\" AND Automation = \"Done\""

@@ -197,7 +197,7 @@ def add_tests_to_folder(cycle_id, folder_id, filter_query):
 
 def populate_tests_to_folders():
     cycle_id = create_cycle()
-    folders = ZEPHYR_CONFIG["filters"]
+    folders = ZEPHYR_CONFIG["folders"]
     for folder in folders:
         folder_id = create_folder(cycle_id, folder["name"])
         add_tests_to_folder(cycle_id, folder_id, folder["query"])
