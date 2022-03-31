@@ -1,0 +1,19 @@
+{
+    "user": "",
+    "acccess_key": "",
+    "secret_key": "",
+    "base_url": "https://prod-api.zephyr4jiracloud.com/connect",
+    "project_id":11111,
+    "version_id": 11111,
+    "cycle_name": "Regression",
+    "filters":[
+        {
+            "name": "Automation",
+            "query": "project = \"My Project\" AND issuetype = Test AND Platform = Web AND status = \"Ready to Execute\" AND Automation = \"Done\""
+        },
+        {
+            "name": "Manual",
+            "query": "project = \"My Project\" AND issuetype = Test AND Platform = Web AND status = \"Ready to Execute\" AND Automation = \"Manual\""
+        }
+    ]
+}
