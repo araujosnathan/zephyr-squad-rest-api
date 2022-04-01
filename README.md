@@ -36,5 +36,5 @@ If your key is different in Jira, try to change the `PATTERN` in `support/utils.
 We are trying to find this pattern in test result file: `@YOUR_JIRA_KEY` in the title of the test
 
 ```
-python3 zephyr_squad.py --command publish --config_file zephyr_config.json --test_result_file mochawesome_report.json
+python zephyr_squad.py --command publish --config_file zephyr_config.json --test_result_file mochawesome_report.json
 ```
