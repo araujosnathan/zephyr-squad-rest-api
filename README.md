@@ -31,8 +31,9 @@ python zephyr_squad.py --command populate --config_file zephyr_config.json
 
 # Command to publish test result to automated folder
 
-Note: For the moment, we are filtering by @ER-XXXX key regex in Mochawesome file to find the tests to update.<br>
-If your key is different in Jira, try to change the line 299 and 301 in `zephyr_api.py`
+Note: For the moment, we are filtering by @ER-XXXX key regex in Mochawesome file to find the tests to be updated.<br>
+If your key is different in Jira, try to change the `PATTERN` in `support/utils.py`
+We are trying to find this pattern in test result file: `@YOUR_JIRA_KEY` in the title of the test
 
 ```
 python3 zephyr_squad.py --command publish --config_file zephyr_config.json --test_result_file mochawesome_report.json

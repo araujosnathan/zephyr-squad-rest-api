@@ -1,6 +1,7 @@
 import argparse
 from colorama import Fore
-from zephyr_api import get_cycle_by_name, get_folder_by_name, get_test_results, load_variables, populate_tests_to_folders, update_tests
+from support.zephyr_api import get_cycle_by_name, get_folder_by_name, load_variables, populate_tests_to_folders, update_tests
+from support.utils import get_test_results
 
 
 def main():

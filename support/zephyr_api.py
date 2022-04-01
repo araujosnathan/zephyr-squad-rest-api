@@ -1,12 +1,10 @@
 import json
-import re
 import jwt
 import time
 import hashlib
 import requests
 import os
 from colorama import Fore
-from TestStatus import TestStatus
 
 # Get environment variables
 USER = ""
@@ -17,8 +15,6 @@ ACCESS_KEY_ENV = os.getenv('ZEPHYR_ACCESS_KEY')
 SECRET_KEY_ENV = os.getenv('ZEPHYR_SECRET_KEY')
 JWT_EXPIRE = 3600
 ZEPHYR_CONFIG = None
-
-# '../zephyr_config_local.json'
 
 
 def load_variables(config_file):
@@ -50,6 +46,14 @@ def load_variables(config_file):
                 Fore.RED + "\nø Secret Key is required\n" + Fore.WHITE)
 
 
+def build_headers(jwt_token, content_type):
+    return {
+        'Authorization': 'JWT '+jwt_token,
+        'zapiAccessKey': ACCESS_KEY,
+        'Content-Type': content_type
+    }
+
+
 def get_jwt_token(canonical_path):
     payload_token = {
         'sub': USER,
@@ -64,14 +68,6 @@ def get_jwt_token(canonical_path):
         return response
     else:
         raise Exception(Fore.RED + "\nø Token not generated\n" + Fore.WHITE)
-
-
-def build_headers(jwt_token, content_type):
-    return {
-        'Authorization': 'JWT '+jwt_token,
-        'zapiAccessKey': ACCESS_KEY,
-        'Content-Type': content_type
-    }
 
 
 def get_cycles():
@@ -142,6 +138,26 @@ def get_folders(cycle_id):
     else:
         raise Exception(
             Fore.RED + "ø It was not possible to get Folders" + Fore.WHITE)
+
+
+def get_tests_from_folder(cycle_id, folder_id):
+    path = '/public/rest/api/1.0/executions/search/folder/{}'.format(folder_id)
+    RELATIVE_PATH = path + "?versionId={}&cycleId={}&projectId={}".format(
+        ZEPHYR_CONFIG["version_id"], cycle_id, ZEPHYR_CONFIG["project_id"])
+
+    CANONICAL_PATH = 'GET&' + path + "&cycleId={}&projectId={}&versionId={}".format(
+        cycle_id, ZEPHYR_CONFIG["project_id"], ZEPHYR_CONFIG["version_id"])
+    jwt_token = get_jwt_token(CANONICAL_PATH)
+    headers = build_headers(jwt_token, 'text/plain')
+
+    response = requests.get(
+        ZEPHYR_CONFIG["base_url"] + RELATIVE_PATH, headers=headers)
+    if(response.status_code == 200):
+        jsonResponse = response.json()
+        return jsonResponse["searchObjectList"]
+    else:
+        raise Exception(
+            Fore.RED + "ø It was not possible to get tests from specific." + Fore.WHITE)
 
 
 def create_cycle():
@@ -229,15 +245,6 @@ def add_tests_to_folder(cycle_id, folder_id, filter_query):
             Fore.RED + "ø It was not possible to add tetes to folder ... Status Code: {}\n".format(response.status_code) + Fore.WHITE)
 
 
-def populate_tests_to_folders():
-    cycle_id = create_cycle()
-    folders = ZEPHYR_CONFIG["folders"]
-    for folder in folders:
-        folder_id = create_folder(cycle_id, folder["name"])
-        add_tests_to_folder(cycle_id, folder_id, folder["query"])
-        print()
-
-
 def update_execution(cycle_id, test_key, execution_id, issue_id, status):
     path = '/public/rest/api/1.0/execution/{}'.format(execution_id)
     RELATIVE_PATH = path
@@ -258,47 +265,13 @@ def update_execution(cycle_id, test_key, execution_id, issue_id, status):
             Fore.RED + "ø It was not possible to update the Test {}".format(test_key) + Fore.WHITE)
 
 
-def get_tests_from_folder(cycle_id, folder_id):
-    path = '/public/rest/api/1.0/executions/search/folder/{}'.format(folder_id)
-    RELATIVE_PATH = path + "?versionId={}&cycleId={}&projectId={}".format(
-        ZEPHYR_CONFIG["version_id"], cycle_id, ZEPHYR_CONFIG["project_id"])
-
-    CANONICAL_PATH = 'GET&' + path + "&cycleId={}&projectId={}&versionId={}".format(
-        cycle_id, ZEPHYR_CONFIG["project_id"], ZEPHYR_CONFIG["version_id"])
-    jwt_token = get_jwt_token(CANONICAL_PATH)
-    headers = build_headers(jwt_token, 'text/plain')
-
-    response = requests.get(
-        ZEPHYR_CONFIG["base_url"] + RELATIVE_PATH, headers=headers)
-    if(response.status_code == 200):
-        jsonResponse = response.json()
-        return jsonResponse["searchObjectList"]
-    else:
-        raise Exception(
-            Fore.RED + "ø It was not possible to get tests from specific." + Fore.WHITE)
-
-
-def convert_status_to_enum(status):
-    switcher = {
-        "passed": TestStatus.PASS,
-        "failed": TestStatus.FAIL,
-        "pending": TestStatus.WIP,
-        "blocked": TestStatus.BLOCKED,
-    }
-    return switcher.get(status, "Invalid Status")
-
-
-def get_test_results(test_result_file):
-    test_file = open(test_result_file)
-    results = json.load(test_file)
-    result_lits = []
-    for res in results["results"]:
-        for suite in res["suites"]:
-            for test in suite["tests"]:
-                testKey = re.search('@ER-(.*?) ', test["title"]).group(1)
-                result_lits.append(
-                    ("ER-{}".format(testKey), convert_status_to_enum(test["state"])))
-    return result_lits
+def populate_tests_to_folders():
+    cycle_id = create_cycle()
+    folders = ZEPHYR_CONFIG["folders"]
+    for folder in folders:
+        folder_id = create_folder(cycle_id, folder["name"])
+        add_tests_to_folder(cycle_id, folder_id, folder["query"])
+        print()
 
 
 def update_tests(cycle_id, folder_ids, test_results):
