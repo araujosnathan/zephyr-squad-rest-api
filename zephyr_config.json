@@ -2,9 +2,10 @@
     "user": "",
     "acccess_key": "",
     "secret_key": "",
-    "base_url": "https://prod-api.zephyr4jiracloud.com/connect",
-    "project_id":11111,
-    "version_id": 11111,
+    "jira_api_token": "",
+    "jira_base_url": "YOUR_JIRA_URL",
+    "zephyr_base_url": "https://prod-api.zephyr4jiracloud.com/connect",
+    "project_key": "YOUR_PROJECT_KEY",
     "cycle_name": "Regression",
     "folders":[
         {

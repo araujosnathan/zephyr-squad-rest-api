@@ -1,6 +1,6 @@
 import argparse
 from colorama import Fore
-from support.zephyr_api import get_cycle_by_name, get_folder_by_name, load_variables, populate_tests_to_folders, update_tests
+from support.zephyr_api import get_cycle_by_name, get_folder_by_name, load_jira_project_settings, load_variables, populate_tests_to_folders, update_tests
 from support.utils import get_test_results
 
 
@@ -22,9 +22,13 @@ def main():
     parser.add_argument('--test_result_file', nargs='+',
                         help='Test result file with status of the tests')
 
+    parser.add_argument('--version_name', nargs='+',
+                        help='Name of the Release Version')
+
     args = parser.parse_args()
     options(args)
     load_variables(args.config_file[0])
+    load_jira_project_settings(args.version_name[0])
     if args.command == "populate":
         populate_tests_to_folders()
 
@@ -42,6 +46,9 @@ def main():
 def options(args):
     if args.config_file is None:
         print("[Missing --config_file param] - You need to pass a path to config file")
+        exit(0)
+    if args.version_name is None:
+        print("[Missing --version_name param] - You need to pass a release version name")
         exit(0)
 
 

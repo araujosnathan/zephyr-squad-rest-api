@@ -5,23 +5,35 @@ import hashlib
 import requests
 import os
 from colorama import Fore
+from support.jira_data import get_projet_id, get_version_id, jira_auth
 
 # Get environment variables
 USER = ""
 ACCESS_KEY = ""
 SECRET_KEY = ""
+API_TOKEN = ""
 USER_ENV = os.getenv('ZEPHYR_USER')
 ACCESS_KEY_ENV = os.getenv('ZEPHYR_ACCESS_KEY')
 SECRET_KEY_ENV = os.getenv('ZEPHYR_SECRET_KEY')
+API_TOKEN_ENV = os.getenv('JIRA_API_TOKEN')
 JWT_EXPIRE = 3600
 ZEPHYR_CONFIG = None
+PROJECT_ID = 0
+VERSION_ID = 0
+
+
+def load_jira_project_settings(version_name):
+    global PROJECT_ID, VERSION_ID
+    jira_auth(ZEPHYR_CONFIG["jira_base_url"], USER, API_TOKEN)
+    PROJECT_ID = get_projet_id(ZEPHYR_CONFIG["project_key"])
+    VERSION_ID = get_version_id(ZEPHYR_CONFIG["project_key"], version_name)
 
 
 def load_variables(config_file):
     global ZEPHYR_CONFIG
     config_file = open(config_file)
     ZEPHYR_CONFIG = json.load(config_file)
-    global USER, ACCESS_KEY, SECRET_KEY
+    global USER, ACCESS_KEY, SECRET_KEY, API_TOKEN
     if("user" in ZEPHYR_CONFIG and ZEPHYR_CONFIG["user"] is not None and ZEPHYR_CONFIG["user"] != ""):
         USER = ZEPHYR_CONFIG["user"]
     else:
@@ -44,6 +56,14 @@ def load_variables(config_file):
         if(SECRET_KEY is None):
             raise Exception(
                 Fore.RED + "\nø Secret Key is required\n" + Fore.WHITE)
+
+    if("jira_api_token" in ZEPHYR_CONFIG and ZEPHYR_CONFIG["jira_api_token"] is not None and ZEPHYR_CONFIG["jira_api_token"] != ""):
+        API_TOKEN = ZEPHYR_CONFIG["jira_api_token"]
+    else:
+        API_TOKEN = API_TOKEN_ENV
+        if(API_TOKEN is None):
+            raise Exception(
+                Fore.RED + "\nø Jira Api Token is required\n" + Fore.WHITE)
 
 
 def build_headers(jwt_token, content_type):
@@ -73,14 +93,14 @@ def get_jwt_token(canonical_path):
 def get_cycles():
     path = '/public/rest/api/1.0/cycles/search'
     RELATIVE_PATH = path + "?versionId={}&projectId={}".format(
-        ZEPHYR_CONFIG["version_id"], ZEPHYR_CONFIG["project_id"])
+        VERSION_ID, PROJECT_ID)
     CANONICAL_PATH = 'GET&' + path + "&projectId={}&versionId={}".format(
-        ZEPHYR_CONFIG["project_id"], ZEPHYR_CONFIG["version_id"])
+        PROJECT_ID, VERSION_ID)
     jwt_token = get_jwt_token(CANONICAL_PATH)
     headers = build_headers(jwt_token, 'text/plain')
 
     response = requests.get(
-        ZEPHYR_CONFIG["base_url"] + RELATIVE_PATH, headers=headers)
+        ZEPHYR_CONFIG["zephyr_base_url"] + RELATIVE_PATH, headers=headers)
 
     if(response.status_code == 200):
         jsonResponse = response.json()
@@ -124,14 +144,14 @@ def get_test_by_key(array_tests, test_key):
 def get_folders(cycle_id):
     path = '/public/rest/api/1.0/folders'
     RELATIVE_PATH = path + "?versionId={}&cycleId={}&projectId={}".format(
-        ZEPHYR_CONFIG["version_id"], cycle_id, ZEPHYR_CONFIG["project_id"])
+        VERSION_ID, cycle_id, PROJECT_ID)
     CANONICAL_PATH = 'GET&' + path + "&cycleId={}&projectId={}&versionId={}".format(
-        cycle_id, ZEPHYR_CONFIG["project_id"], ZEPHYR_CONFIG["version_id"])
+        cycle_id, PROJECT_ID, VERSION_ID)
     jwt_token = get_jwt_token(CANONICAL_PATH)
     headers = build_headers(jwt_token, 'text/plain')
 
     response = requests.get(
-        ZEPHYR_CONFIG["base_url"] + RELATIVE_PATH, headers=headers)
+        ZEPHYR_CONFIG["zephyr_base_url"] + RELATIVE_PATH, headers=headers)
     if(response.status_code == 200):
         jsonResponse = response.json()
         return jsonResponse
@@ -143,15 +163,15 @@ def get_folders(cycle_id):
 def get_tests_from_folder(cycle_id, folder_id):
     path = '/public/rest/api/1.0/executions/search/folder/{}'.format(folder_id)
     RELATIVE_PATH = path + "?versionId={}&cycleId={}&projectId={}".format(
-        ZEPHYR_CONFIG["version_id"], cycle_id, ZEPHYR_CONFIG["project_id"])
+        VERSION_ID, cycle_id, PROJECT_ID)
 
     CANONICAL_PATH = 'GET&' + path + "&cycleId={}&projectId={}&versionId={}".format(
-        cycle_id, ZEPHYR_CONFIG["project_id"], ZEPHYR_CONFIG["version_id"])
+        cycle_id, PROJECT_ID, VERSION_ID)
     jwt_token = get_jwt_token(CANONICAL_PATH)
     headers = build_headers(jwt_token, 'text/plain')
 
     response = requests.get(
-        ZEPHYR_CONFIG["base_url"] + RELATIVE_PATH, headers=headers)
+        ZEPHYR_CONFIG["zephyr_base_url"] + RELATIVE_PATH, headers=headers)
     if(response.status_code == 200):
         jsonResponse = response.json()
         return jsonResponse["searchObjectList"]
@@ -168,7 +188,7 @@ def create_cycle():
     headers = build_headers(jwt_token, 'application/json')
 
     payload_new_cycle = {"name": ZEPHYR_CONFIG["cycle_name"],
-                         "versionId": ZEPHYR_CONFIG["version_id"], "projectId": ZEPHYR_CONFIG["project_id"]}
+                         "versionId": VERSION_ID, "projectId": PROJECT_ID}
 
     existing_cycles = get_cycles()
     retrieved_cycle = list(
@@ -179,7 +199,7 @@ def create_cycle():
         return retrieved_cycle[0].get('id')
     else:
         response = requests.post(
-            ZEPHYR_CONFIG["base_url"] + RELATIVE_PATH, headers=headers, json=payload_new_cycle)
+            ZEPHYR_CONFIG["zephyr_base_url"] + RELATIVE_PATH, headers=headers, json=payload_new_cycle)
         jsonResponse = response.json()
         try:
             CYCLEID = jsonResponse['id']
@@ -199,10 +219,10 @@ def create_folder(cycle_id, folder_name):
     headers = build_headers(jwt_token, 'application/json')
 
     payloadFolder = {"name": folder_name,
-                     "cycleId": cycle_id, "versionId": ZEPHYR_CONFIG["version_id"], "projectId": ZEPHYR_CONFIG["project_id"]}
+                     "cycleId": cycle_id, "versionId": VERSION_ID, "projectId": PROJECT_ID}
 
     response = requests.post(
-        ZEPHYR_CONFIG["base_url"] + RELATIVE_PATH, headers=headers, json=payloadFolder)
+        ZEPHYR_CONFIG["zephyr_base_url"] + RELATIVE_PATH, headers=headers, json=payloadFolder)
 
     jsonResponse = response.json()
     if(response.status_code == 400 and jsonResponse['errorCode'] == 152):
@@ -233,11 +253,11 @@ def add_tests_to_folder(cycle_id, folder_id, filter_query):
     headers = build_headers(jwt_token, 'application/json')
 
     query = filter_query
-    payload_add_tests = {"jql": query, "method": 2, "versionId": ZEPHYR_CONFIG["version_id"],
-                         "projectId": ZEPHYR_CONFIG["project_id"], "cycleId": cycle_id}
+    payload_add_tests = {"jql": query, "method": 2, "versionId": VERSION_ID,
+                         "projectId": PROJECT_ID, "cycleId": cycle_id}
 
     response = requests.post(
-        ZEPHYR_CONFIG["base_url"] + RELATIVE_PATH, headers=headers, json=payload_add_tests)
+        ZEPHYR_CONFIG["zephyr_base_url"] + RELATIVE_PATH, headers=headers, json=payload_add_tests)
     if(response.status_code == 200):
         print(Fore.GREEN + '√ Tests added with success to previous folder.\n' + Fore.WHITE)
     else:
@@ -254,10 +274,10 @@ def update_execution(cycle_id, test_key, execution_id, issue_id, status):
     headers = build_headers(jwt_token, 'application/json')
 
     payload_update = {"status": {"id": status},
-                      "projectId": ZEPHYR_CONFIG['project_id'], "issueId": issue_id, "cycleId": cycle_id, "versionId": ZEPHYR_CONFIG['version_id']}
+                      "projectId": PROJECT_ID, "issueId": issue_id, "cycleId": cycle_id, "versionId": VERSION_ID}
 
     response = requests.put(
-        ZEPHYR_CONFIG["base_url"] + RELATIVE_PATH, headers=headers, json=payload_update)
+        ZEPHYR_CONFIG["zephyr_base_url"] + RELATIVE_PATH, headers=headers, json=payload_update)
     if(response.status_code == 200):
         print(Fore.GREEN + '√ Test {} updated with success.'.format(test_key) + Fore.WHITE)
     else:

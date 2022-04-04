@@ -26,7 +26,7 @@ If you put the credentials in config file, it will use them even you have set an
 # Command to populate cycle and folders with tests
 
 ```
-python zephyr_squad.py --command populate --config_file zephyr_config.json
+python zephyr_squad.py --command populate --config_file zephyr_config.json --version_name <version_name>
 ```
 
 # Command to publish test result to automated folder
@@ -36,5 +36,5 @@ If your key is different in Jira, try to change the `PATTERN` in `support/utils.
 We are trying to find this pattern in test result file: `@YOUR_JIRA_KEY` in the title of the test
 
 ```
-python zephyr_squad.py --command publish --config_file zephyr_config.json --test_result_file mochawesome_report.json
+python zephyr_squad.py --command publish --config_file zephyr_config.json --version_name <version_name> --test_result_file <mochawesome_report>
 ```
