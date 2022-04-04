@@ -22,6 +22,10 @@ def get_version_id(project_key, version_name):
 
 def get_test_issues_by_filter(filter_id):
     test_issues_list = []
-    for issue in MYJIRA.search_issues('filter={}'.format(filter_id)):
-        test_issues_list.append(issue.key)
+    start = 0
+    max = 100
+    while MYJIRA.search_issues('filter={}'.format(filter_id), startAt=start, maxResults=max):
+        for issue in MYJIRA.search_issues('filter={}'.format(filter_id), startAt=start, maxResults=max):
+            test_issues_list.append(issue.key)
+        start = start + 100
     return test_issues_list
