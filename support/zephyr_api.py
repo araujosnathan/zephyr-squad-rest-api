@@ -5,7 +5,7 @@ import hashlib
 import requests
 import os
 from colorama import Fore
-from support.jira_data import get_projet_id, get_version_id, jira_auth
+from support.jira_data import get_projet_id, get_test_issues_by_filter, get_version_id, jira_auth
 
 # Get environment variables
 USER = ""
@@ -244,7 +244,7 @@ def create_folder(cycle_id, folder_name):
                 Fore.RED + "ø It was not possible to create Folder: {}".format(folder_name) + Fore.WHITE)
 
 
-def add_tests_to_folder(cycle_id, folder_id, filter_query):
+def add_tests_to_folder_by_query(cycle_id, folder_id, filter_query):
     path = "/public/rest/api/1.0/executions/add/folder/"
     RELATIVE_PATH = path + '{}'.format(folder_id)
     CANONICAL_PATH = 'POST&' + path + str(folder_id)+"&"
@@ -259,7 +259,27 @@ def add_tests_to_folder(cycle_id, folder_id, filter_query):
     response = requests.post(
         ZEPHYR_CONFIG["zephyr_base_url"] + RELATIVE_PATH, headers=headers, json=payload_add_tests)
     if(response.status_code == 200):
-        print(Fore.GREEN + '√ Tests added with success to previous folder.\n' + Fore.WHITE)
+        print(Fore.GREEN + '√ Tests added with success to previous folder by Query.\n' + Fore.WHITE)
+    else:
+        raise Exception(
+            Fore.RED + "ø It was not possible to add tetes to folder ... Status Code: {}\n".format(response.status_code) + Fore.WHITE)
+
+
+def add_tests_to_folder_by_issue_list(cycle_id, folder_id, test_issue_list):
+    path = "/public/rest/api/1.0/executions/add/folder/"
+    RELATIVE_PATH = path + '{}'.format(folder_id)
+    CANONICAL_PATH = 'POST&' + path + str(folder_id)+"&"
+
+    jwt_token = get_jwt_token(CANONICAL_PATH)
+    headers = build_headers(jwt_token, 'application/json')
+
+    payload_add_tests = {"issues": test_issue_list, "method": 1, "versionId": VERSION_ID,
+                         "projectId": PROJECT_ID, "cycleId": cycle_id}
+
+    response = requests.post(
+        ZEPHYR_CONFIG["zephyr_base_url"] + RELATIVE_PATH, headers=headers, json=payload_add_tests)
+    if(response.status_code == 200):
+        print(Fore.GREEN + '√ Tests added with success to previous folder by Test Issue List.\n' + Fore.WHITE)
     else:
         raise Exception(
             Fore.RED + "ø It was not possible to add tetes to folder ... Status Code: {}\n".format(response.status_code) + Fore.WHITE)
@@ -290,8 +310,20 @@ def populate_tests_to_folders():
     folders = ZEPHYR_CONFIG["folders"]
     for folder in folders:
         folder_id = create_folder(cycle_id, folder["name"])
-        add_tests_to_folder(cycle_id, folder_id, folder["query"])
-        print()
+        if("filter" in folder and folder["filter"] is not None and folder["filter"] != ""):
+            issue_list = get_test_issues_by_filter(folder["filter"])
+            print(Fore.BLUE + '+ List to be added:' + Fore.WHITE)
+            print(issue_list)
+            add_tests_to_folder_by_issue_list(cycle_id, folder_id, issue_list)
+            print()
+        elif("query" in folder and folder["query"] is not None and folder["query"] != ""):
+            print(Fore.BLUE + '+ JQL Query to be added:' + Fore.WHITE)
+            print(folder["query"])
+            add_tests_to_folder_by_query(cycle_id, folder_id, folder["query"])
+            print()
+        else:
+            raise Exception(
+                Fore.RED + "ø Filter or JQL Query not found in Config File" + Fore.WHITE)
 
 
 def update_tests(cycle_id, folder_ids, test_results):

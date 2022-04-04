@@ -25,6 +25,9 @@ If you put the credentials in config file, it will use them even you have set an
 
 # Command to populate cycle and folders with tests
 
+Note: You can populate the folders with Filter ID ou JQL Query, passing these valus in `zephyr_config.json`. <br>
+The default flow looks first for `filter` and then `jql query` if filter is not passed. You can choose how it is you better for you.
+
 ```
 python zephyr_squad.py --command populate --config_file zephyr_config.json --version_name <version_name>
 ```

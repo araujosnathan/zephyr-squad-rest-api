@@ -10,11 +10,13 @@
     "folders":[
         {
             "name": "Automation",
+            "filter": "11111",
             "query": "project = \"My Project\" AND issuetype = Test AND Platform = Web AND status = \"Ready to Execute\" AND Automation = \"Done\"",
             "type": "Manual"
         },
         {
             "name": "Manual",
+            "filter": "11111",
             "query": "project = \"My Project\" AND issuetype = Test AND Platform = Web AND status = \"Ready to Execute\" AND Automation = \"Manual\"",
             "type": "Auto"
         }

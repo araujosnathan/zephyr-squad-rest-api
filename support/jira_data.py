@@ -18,3 +18,10 @@ def get_version_id(project_key, version_name):
     version_retrived = list(
         filter(lambda version: version.name == version_name, versions))
     return version_retrived[0].id
+
+
+def get_test_issues_by_filter(filter_id):
+    test_issues_list = []
+    for issue in MYJIRA.search_issues('filter={}'.format(filter_id)):
+        test_issues_list.append(issue.key)
+    return test_issues_list
