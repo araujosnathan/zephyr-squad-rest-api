@@ -44,7 +44,7 @@ python zephyr_squad.py --command publish --config_file zephyr_config.json --vers
 
 # Command to publish test result to automated folder by default bulk
 
-Note: In the `zephyr_keys_status.json` you can pass a list of keys and the status that you want to apply for all them. It was implement to update all tests by bulk for a default status <br>
+Note: In the `zephyr_keys_status.json` you can pass a list of keys and the status that you want to apply for all them. It was implemented to update all tests by bulk for a default status <br>
 Status allowed:<br>
 PASS = 1 | FAIL = 2 | WIP = 3 | BLOCKED = 4 | NOT_EXECUTED = -1
 
