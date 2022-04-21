@@ -125,10 +125,11 @@ def get_folder_by_name(cycle_id):
     existing_folders = get_folders(cycle_id)
     for folder in ZEPHYR_CONFIG["folders"]:
         if(folder['type'] == "Auto"):
-            retrieved_folder = list(
-                filter(lambda folder: folder.get('name') == folder['name'], existing_folders))
-            if(retrieved_folder):
-                folders.append(retrieved_folder[0].get('id'))
+            retrieved_folders = list(
+                filter(lambda f: f.get('name') == folder['name'], existing_folders))
+            if(retrieved_folders):
+                for retrieved_folder in retrieved_folders:
+                    folders.append(retrieved_folder.get('id'))
     return folders
 
 
@@ -160,24 +161,25 @@ def get_folders(cycle_id):
             Fore.RED + "ø It was not possible to get Folders" + Fore.WHITE)
 
 
-def get_tests_from_folder(cycle_id, folder_id):
+def get_tests_from_folder(cycle_id, folder_id, pagination):
     path = '/public/rest/api/1.0/executions/search/folder/{}'.format(folder_id)
-    RELATIVE_PATH = path + "?versionId={}&cycleId={}&projectId={}".format(
-        VERSION_ID, cycle_id, PROJECT_ID)
+    RELATIVE_PATH = path + "?offset={}&size=50&versionId={}&cycleId={}&projectId={}".format(
+        pagination, VERSION_ID, cycle_id, PROJECT_ID)
 
-    CANONICAL_PATH = 'GET&' + path + "&cycleId={}&projectId={}&versionId={}".format(
-        cycle_id, PROJECT_ID, VERSION_ID)
+    CANONICAL_PATH = 'GET&' + path + "&cycleId={}&offset={}&projectId={}&size=50&versionId={}".format(
+        cycle_id, pagination, PROJECT_ID, VERSION_ID)
     jwt_token = get_jwt_token(CANONICAL_PATH)
     headers = build_headers(jwt_token, 'text/plain')
 
     response = requests.get(
         ZEPHYR_CONFIG["zephyr_base_url"] + RELATIVE_PATH, headers=headers)
+
     if(response.status_code == 200):
         jsonResponse = response.json()
         return jsonResponse["searchObjectList"]
     else:
         raise Exception(
-            Fore.RED + "ø It was not possible to get tests from specific." + Fore.WHITE)
+            Fore.RED + "ø It was not possible to get tests from specific folder" + Fore.WHITE)
 
 
 def create_cycle():
@@ -328,10 +330,37 @@ def populate_tests_to_folders():
 
 def update_tests(cycle_id, folder_ids, test_results):
     for folder_id in folder_ids:
-        tests_from_folder = get_tests_from_folder(cycle_id, folder_id)
+        start = 0
+        tests_from_folder = []
+        print(Fore.YELLOW + "¬ Getting Tests from Folder" + Fore.WHITE)
+        while get_tests_from_folder(cycle_id, folder_id, start):
+            tests_from_folder = tests_from_folder + \
+                get_tests_from_folder(cycle_id, folder_id, start)
+            start = start + 50
         for key, status in test_results:
             execution_id, issue_id = get_test_by_key(
                 tests_from_folder, key)
             if(issue_id):
                 update_execution(cycle_id, key, execution_id,
                                  issue_id, status)
+        print(
+            Fore.WHITE + "+ Total Test Results: {} ".format(len(test_results)) + Fore.WHITE)
+
+
+def update_tests_by_keys(cycle_id, folder_ids, key_list, status):
+    for folder_id in folder_ids:
+        start = 0
+        tests_from_folder = []
+        print(Fore.YELLOW + "¬ Getting Tests from Folder" + Fore.WHITE)
+        while get_tests_from_folder(cycle_id, folder_id, start):
+            tests_from_folder = tests_from_folder + \
+                get_tests_from_folder(cycle_id, folder_id, start)
+            start = start + 50
+        for key in key_list:
+            execution_id, issue_id = get_test_by_key(
+                tests_from_folder, key)
+            if(issue_id):
+                update_execution(cycle_id, key, execution_id,
+                                 issue_id, status)
+        print(
+            Fore.WHITE + "+ Total Test Results: {} \n".format(len(key_list)) + Fore.WHITE)

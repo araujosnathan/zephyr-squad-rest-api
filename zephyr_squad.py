@@ -1,6 +1,7 @@
 import argparse
+import json
 from colorama import Fore
-from support.zephyr_api import get_cycle_by_name, get_folder_by_name, load_jira_project_settings, load_variables, populate_tests_to_folders, update_tests
+from support.zephyr_api import get_cycle_by_name, get_folder_by_name, load_jira_project_settings, load_variables, populate_tests_to_folders, update_tests, update_tests_by_keys
 from support.utils import get_test_results
 
 
@@ -12,7 +13,7 @@ def main():
         '--command', '-m',
         help='Choose a command to execute',
         type=str,
-        choices=["populate", "publish"],
+        choices=["populate", "publish", "publish-static"],
         required=True
     )
 
@@ -41,6 +42,18 @@ def main():
             print(Fore.YELLOW + '¬ No Automated Folder was specficied.' + Fore.WHITE)
             exit(0)
         update_tests(cycle_id, folder_ids, test_results)
+
+    if args.command == "publish-static":
+        config_file = open("zephyr_keys_status.json")
+        ZEPHYR_KEYS_STATUS = json.load(config_file)
+        test_results = ZEPHYR_KEYS_STATUS["keys"]
+        status = ZEPHYR_KEYS_STATUS["status"]
+        cycle_id = get_cycle_by_name()
+        folder_ids = get_folder_by_name(cycle_id)
+        if(not folder_ids):
+            print(Fore.YELLOW + '¬ No Automated Folder was specficied.' + Fore.WHITE)
+            exit(0)
+        update_tests_by_keys(cycle_id, folder_ids, test_results, status)
 
 
 def options(args):

@@ -34,10 +34,20 @@ python zephyr_squad.py --command populate --config_file zephyr_config.json --ver
 
 # Command to publish test result to automated folder
 
-Note: For the moment, we are filtering by @ER-XXXX key regex in Mochawesome file to find the tests to be updated.<br>
+Note: For the moment, we are filtering by @YOUR_JIRA_KEY key regex in Mochawesome file to find the tests to be updated.<br>
 If your key is different in Jira, try to change the `PATTERN` in `support/utils.py`
 We are trying to find this pattern in test result file: `@YOUR_JIRA_KEY` in the title of the test
 
 ```
 python zephyr_squad.py --command publish --config_file zephyr_config.json --version_name <version_name> --test_result_file <mochawesome_report>
+```
+
+# Command to publish test result to automated folder by default bulk
+
+Note: In the `zephyr_keys_status.json` you can pass a list of keys and the status that you want to apply for all them. It was implement to update all tests by bulk for a default status <br>
+Status allowed:<br>
+PASS = 1 | FAIL = 2 | WIP = 3 | BLOCKED = 4 | NOT_EXECUTED = -1
+
+```
+python zephyr_squad.py --command publish-static --config_file zephyr_config.json --version_name <version_name>
 ```
