@@ -38,7 +38,7 @@ def main():
         test_results = get_test_results(args.test_result_file[0])
         cycle_id = get_cycle_by_name()
         folder_ids = get_folder_by_name(cycle_id)
-        if(not folder_ids):
+        if (not folder_ids):
             print(Fore.YELLOW + '¬ No Automated Folder was specficied.' + Fore.WHITE)
             exit(0)
         update_tests(cycle_id, folder_ids, test_results)
@@ -50,7 +50,7 @@ def main():
         status = ZEPHYR_KEYS_STATUS["status"]
         cycle_id = get_cycle_by_name()
         folder_ids = get_folder_by_name(cycle_id)
-        if(not folder_ids):
+        if (not folder_ids):
             print(Fore.YELLOW + '¬ No Automated Folder was specficied.' + Fore.WHITE)
             exit(0)
         update_tests_by_keys(cycle_id, folder_ids, test_results, status)

@@ -5,6 +5,7 @@ import hashlib
 import requests
 import os
 from colorama import Fore
+from support.TestStatus import TestStatus
 from support.jira_data import get_projet_id, get_test_issues_by_filter, get_version_id, jira_auth
 
 # Get environment variables
@@ -34,34 +35,34 @@ def load_variables(config_file):
     config_file = open(config_file)
     ZEPHYR_CONFIG = json.load(config_file)
     global USER, ACCESS_KEY, SECRET_KEY, API_TOKEN
-    if("user" in ZEPHYR_CONFIG and ZEPHYR_CONFIG["user"] is not None and ZEPHYR_CONFIG["user"] != ""):
+    if ("user" in ZEPHYR_CONFIG and ZEPHYR_CONFIG["user"] is not None and ZEPHYR_CONFIG["user"] != ""):
         USER = ZEPHYR_CONFIG["user"]
     else:
         USER = USER_ENV
-        if(USER is None):
+        if (USER is None):
             raise Exception(Fore.RED + "\nø User is required\n" + Fore.WHITE)
 
-    if("acccess_key" in ZEPHYR_CONFIG and ZEPHYR_CONFIG["acccess_key"] is not None and ZEPHYR_CONFIG["acccess_key"] != ""):
+    if ("acccess_key" in ZEPHYR_CONFIG and ZEPHYR_CONFIG["acccess_key"] is not None and ZEPHYR_CONFIG["acccess_key"] != ""):
         ACCESS_KEY = ZEPHYR_CONFIG["acccess_key"]
     else:
         ACCESS_KEY = ACCESS_KEY_ENV
-        if(ACCESS_KEY is None):
+        if (ACCESS_KEY is None):
             raise Exception(
                 Fore.RED + "\nø Access Key is required\n" + Fore.WHITE)
 
-    if("secret_key" in ZEPHYR_CONFIG and ZEPHYR_CONFIG["secret_key"] is not None and ZEPHYR_CONFIG["secret_key"] != ""):
+    if ("secret_key" in ZEPHYR_CONFIG and ZEPHYR_CONFIG["secret_key"] is not None and ZEPHYR_CONFIG["secret_key"] != ""):
         SECRET_KEY = ZEPHYR_CONFIG["secret_key"]
     else:
         SECRET_KEY = SECRET_KEY_ENV
-        if(SECRET_KEY is None):
+        if (SECRET_KEY is None):
             raise Exception(
                 Fore.RED + "\nø Secret Key is required\n" + Fore.WHITE)
 
-    if("jira_api_token" in ZEPHYR_CONFIG and ZEPHYR_CONFIG["jira_api_token"] is not None and ZEPHYR_CONFIG["jira_api_token"] != ""):
+    if ("jira_api_token" in ZEPHYR_CONFIG and ZEPHYR_CONFIG["jira_api_token"] is not None and ZEPHYR_CONFIG["jira_api_token"] != ""):
         API_TOKEN = ZEPHYR_CONFIG["jira_api_token"]
     else:
         API_TOKEN = API_TOKEN_ENV
-        if(API_TOKEN is None):
+        if (API_TOKEN is None):
             raise Exception(
                 Fore.RED + "\nø Jira Api Token is required\n" + Fore.WHITE)
 
@@ -84,7 +85,7 @@ def get_jwt_token(canonical_path):
     }
     response = jwt.encode(payload_token, SECRET_KEY,
                           algorithm='HS256').strip()
-    if(response is not None):
+    if (response is not None):
         return response
     else:
         raise Exception(Fore.RED + "\nø Token not generated\n" + Fore.WHITE)
@@ -102,7 +103,7 @@ def get_cycles():
     response = requests.get(
         ZEPHYR_CONFIG["zephyr_base_url"] + RELATIVE_PATH, headers=headers)
 
-    if(response.status_code == 200):
+    if (response.status_code == 200):
         jsonResponse = response.json()
         return jsonResponse
     else:
@@ -114,7 +115,7 @@ def get_cycle_by_name():
     existing_cycles = get_cycles()
     retrieved_cycle = list(
         filter(lambda cycle: cycle.get('name') == ZEPHYR_CONFIG["cycle_name"], existing_cycles))
-    if(retrieved_cycle):
+    if (retrieved_cycle):
         return retrieved_cycle[0].get('id')
     else:
         return None
@@ -124,10 +125,10 @@ def get_folder_by_name(cycle_id):
     folders = []
     existing_folders = get_folders(cycle_id)
     for folder in ZEPHYR_CONFIG["folders"]:
-        if(folder['type'] == "Auto"):
+        if (folder['type'] == "Auto"):
             retrieved_folders = list(
                 filter(lambda f: f.get('name') == folder['name'], existing_folders))
-            if(retrieved_folders):
+            if (retrieved_folders):
                 for retrieved_folder in retrieved_folders:
                     folders.append(retrieved_folder.get('id'))
     return folders
@@ -136,7 +137,7 @@ def get_folder_by_name(cycle_id):
 def get_test_by_key(array_tests, test_key):
     retrieved_test = list(
         filter(lambda test: test.get('issueKey') == test_key, array_tests))
-    if(retrieved_test):
+    if (retrieved_test):
         return retrieved_test[0].get('execution').get('id'), retrieved_test[0].get('execution').get('issueId')
     else:
         return None, None
@@ -153,7 +154,7 @@ def get_folders(cycle_id):
 
     response = requests.get(
         ZEPHYR_CONFIG["zephyr_base_url"] + RELATIVE_PATH, headers=headers)
-    if(response.status_code == 200):
+    if (response.status_code == 200):
         jsonResponse = response.json()
         return jsonResponse
     else:
@@ -174,7 +175,7 @@ def get_tests_from_folder(cycle_id, folder_id, pagination):
     response = requests.get(
         ZEPHYR_CONFIG["zephyr_base_url"] + RELATIVE_PATH, headers=headers)
 
-    if(response.status_code == 200):
+    if (response.status_code == 200):
         jsonResponse = response.json()
         return jsonResponse["searchObjectList"]
     else:
@@ -195,7 +196,7 @@ def create_cycle():
     existing_cycles = get_cycles()
     retrieved_cycle = list(
         filter(lambda cycle: cycle.get('name') == ZEPHYR_CONFIG["cycle_name"], existing_cycles))
-    if(retrieved_cycle):
+    if (retrieved_cycle):
         print(Fore.YELLOW + '¬ Cycle {} already existing. Using it.'.format(
             ZEPHYR_CONFIG["cycle_name"]) + Fore.WHITE)
         return retrieved_cycle[0].get('id')
@@ -227,11 +228,11 @@ def create_folder(cycle_id, folder_name):
         ZEPHYR_CONFIG["zephyr_base_url"] + RELATIVE_PATH, headers=headers, json=payloadFolder)
 
     jsonResponse = response.json()
-    if(response.status_code == 400 and jsonResponse['errorCode'] == 152):
+    if (response.status_code == 400 and jsonResponse['errorCode'] == 152):
         existing_folders = get_folders(cycle_id)
         retrieved_folder = list(
             filter(lambda folder: folder.get('name') == folder_name, existing_folders))
-        if(retrieved_folder):
+        if (retrieved_folder):
             print(
                 Fore.YELLOW + '¬ Folder {} already existing. Using it.'.format(folder_name) + Fore.WHITE)
             return retrieved_folder[0].get('id')
@@ -260,7 +261,7 @@ def add_tests_to_folder_by_query(cycle_id, folder_id, filter_query):
 
     response = requests.post(
         ZEPHYR_CONFIG["zephyr_base_url"] + RELATIVE_PATH, headers=headers, json=payload_add_tests)
-    if(response.status_code == 200):
+    if (response.status_code == 200):
         print(Fore.GREEN + '√ Tests added with success to previous folder by Query.\n' + Fore.WHITE)
     else:
         raise Exception(
@@ -280,7 +281,7 @@ def add_tests_to_folder_by_issue_list(cycle_id, folder_id, test_issue_list):
 
     response = requests.post(
         ZEPHYR_CONFIG["zephyr_base_url"] + RELATIVE_PATH, headers=headers, json=payload_add_tests)
-    if(response.status_code == 200):
+    if (response.status_code == 200):
         print(Fore.GREEN + '√ Tests added with success to previous folder by Test Issue List.\n' + Fore.WHITE)
     else:
         raise Exception(
@@ -300,7 +301,7 @@ def update_execution(cycle_id, test_key, execution_id, issue_id, status):
 
     response = requests.put(
         ZEPHYR_CONFIG["zephyr_base_url"] + RELATIVE_PATH, headers=headers, json=payload_update)
-    if(response.status_code == 200):
+    if (response.status_code == 200):
         print(Fore.GREEN + '√ Test {} updated with success.'.format(test_key) + Fore.WHITE)
     else:
         raise Exception(
@@ -312,13 +313,13 @@ def populate_tests_to_folders():
     folders = ZEPHYR_CONFIG["folders"]
     for folder in folders:
         folder_id = create_folder(cycle_id, folder["name"])
-        if("filter" in folder and folder["filter"] is not None and folder["filter"] != ""):
+        if ("filter" in folder and folder["filter"] is not None and folder["filter"] != ""):
             issue_list = get_test_issues_by_filter(folder["filter"])
             print(Fore.BLUE + '+ List to be added:' + Fore.WHITE)
             print(issue_list)
             add_tests_to_folder_by_issue_list(cycle_id, folder_id, issue_list)
             print()
-        elif("query" in folder and folder["query"] is not None and folder["query"] != ""):
+        elif ("query" in folder and folder["query"] is not None and folder["query"] != ""):
             print(Fore.BLUE + '+ JQL Query to be added:' + Fore.WHITE)
             print(folder["query"])
             add_tests_to_folder_by_query(cycle_id, folder_id, folder["query"])
@@ -338,11 +339,12 @@ def update_tests(cycle_id, folder_ids, test_results):
                 get_tests_from_folder(cycle_id, folder_id, start)
             start = start + 50
         for key, status in test_results:
-            execution_id, issue_id = get_test_by_key(
-                tests_from_folder, key)
-            if(issue_id):
-                update_execution(cycle_id, key, execution_id,
-                                 issue_id, status)
+            if (not status == TestStatus.WIP):
+                execution_id, issue_id = get_test_by_key(
+                    tests_from_folder, key)
+                if (issue_id):
+                    update_execution(cycle_id, key, execution_id,
+                                     issue_id, status)
         print(
             Fore.WHITE + "+ Total Test Results: {} ".format(len(test_results)) + Fore.WHITE)
 
@@ -359,7 +361,7 @@ def update_tests_by_keys(cycle_id, folder_ids, key_list, status):
         for key in key_list:
             execution_id, issue_id = get_test_by_key(
                 tests_from_folder, key)
-            if(issue_id):
+            if (issue_id):
                 update_execution(cycle_id, key, execution_id,
                                  issue_id, status)
         print(
